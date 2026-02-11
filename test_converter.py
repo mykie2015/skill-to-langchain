@@ -1,7 +1,7 @@
 """
 Test suite for skill-to-langchain converter.
 
-Phase 1: Test basic skill parsing and structure extraction.
+Phase 2: Parameter extraction and dynamic command generation.
 """
 
 import unittest
@@ -52,6 +52,47 @@ class TestSkillParser(unittest.TestCase):
         self.assertEqual(pattern['primary_tool'], 'curl')
 
 
+class TestParameterExtraction(unittest.TestCase):
+    """Test parameter extraction from commands (Phase 2)."""
+    
+    def test_extract_url_parameters(self):
+        """Test extraction of parameters from URL templates."""
+        from converter import extract_parameters
+        
+        command = 'curl -s "wttr.in/{location}?format=3"'
+        params = extract_parameters(command)
+        
+        self.assertEqual(len(params), 1)
+        self.assertIn('location', params)
+        self.assertEqual(params['location']['type'], 'string')
+        
+    def test_extract_multiple_parameters(self):
+        """Test extraction of multiple parameters."""
+        from converter import extract_parameters
+        
+        command = 'curl -s "api.example.com/{city}/{country}?units={unit}"'
+        params = extract_parameters(command)
+        
+        self.assertEqual(len(params), 3)
+        self.assertIn('city', params)
+        self.assertIn('country', params)
+        self.assertIn('unit', params)
+        
+    def test_generate_tool_with_parameters(self):
+        """Test generation of LangChain tool with parameters."""
+        from converter import generate_langchain_tool_v2
+        
+        command = 'curl -s "wttr.in/{location}?format=3"'
+        tool_code = generate_langchain_tool_v2('get_weather', command)
+        
+        # Should have location parameter in signature
+        self.assertIn('location: str', tool_code)
+        # Should use f-string for dynamic command
+        self.assertIn('f"', tool_code)
+        # Should have proper docstring
+        self.assertIn('location:', tool_code)
+
+
 class TestLangChainGeneration(unittest.TestCase):
     """Test LangChain agent code generation."""
     
@@ -80,6 +121,18 @@ class TestLangChainGeneration(unittest.TestCase):
         self.assertIn('@tool', agent_code)
         # Should contain agent initialization
         self.assertIn('agent', agent_code.lower())
+        
+    def test_generate_agent_file_v2(self):
+        """Test generation of agent file with parameter support."""
+        from converter import generate_agent_file_v2
+        
+        skill_path = Path("/app/skills/weather/SKILL.md")
+        agent_code = generate_agent_file_v2(skill_path)
+        
+        # Should have parameterized tool
+        self.assertIn('location: str', agent_code)
+        # Should use f-string
+        self.assertIn('f"', agent_code)
 
 
 if __name__ == '__main__':
