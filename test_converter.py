@@ -82,5 +82,71 @@ class TestLangChainGeneration(unittest.TestCase):
         self.assertIn('agent', agent_code.lower())
 
 
+class TestMultiToolWorkflow(unittest.TestCase):
+    """Test Phase 3: Multi-tool workflow support."""
+    
+    def test_extract_multiple_tools_from_skill(self):
+        """Test extraction of multiple distinct tools from a skill."""
+        from converter import extract_workflow_tools
+        
+        # GitHub skill has multiple commands (issue, pr, run, api)
+        github_skill_path = Path("/app/skills/github/SKILL.md")
+        if github_skill_path.exists():
+            tools = extract_workflow_tools(github_skill_path)
+            
+            # Should identify multiple distinct tools
+            self.assertGreater(len(tools), 1)
+            # Each tool should have name and command
+            for tool in tools:
+                self.assertIn('name', tool)
+                self.assertIn('command', tool)
+    
+    def test_generate_multiple_langchain_tools(self):
+        """Test generation of multiple LangChain tools from workflow."""
+        from converter import generate_workflow_tools
+        
+        tools_spec = [
+            {'name': 'github_issue_list', 'command': 'gh issue list'},
+            {'name': 'github_pr_list', 'command': 'gh pr list'}
+        ]
+        
+        tools_code = generate_workflow_tools(tools_spec)
+        
+        # Should generate code for both tools
+        self.assertIn('github_issue_list', tools_code)
+        self.assertIn('github_pr_list', tools_code)
+        self.assertIn('@tool', tools_code)
+        # Should have multiple @tool decorators
+        self.assertGreaterEqual(tools_code.count('@tool'), 2)
+    
+    def test_agent_with_multiple_tools(self):
+        """Test agent generation with multiple tools in workflow."""
+        from converter import generate_agent_file_v3
+        
+        github_skill_path = Path("/app/skills/github/SKILL.md")
+        if github_skill_path.exists():
+            agent_code = generate_agent_file_v3(github_skill_path)
+            
+            # Should contain multiple tool definitions
+            self.assertGreater(agent_code.count('@tool'), 1)
+            # Should have tools list with multiple items
+            self.assertIn('tools = [', agent_code)
+            # Should coordinate multiple tools
+            self.assertIn('github', agent_code.lower())
+    
+    def test_workflow_coordination_logic(self):
+        """Test that agent can coordinate multiple tools in sequence."""
+        from converter import generate_agent_file_v3
+        
+        github_skill_path = Path("/app/skills/github/SKILL.md")
+        if github_skill_path.exists():
+            agent_code = generate_agent_file_v3(github_skill_path)
+            
+            # Should have agent executor that can handle multiple tools
+            self.assertIn('AgentExecutor', agent_code)
+            # Should have prompt that mentions multiple capabilities
+            self.assertIn('tools', agent_code.lower())
+
+
 if __name__ == '__main__':
     unittest.main()

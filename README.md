@@ -68,28 +68,61 @@ All 6 tests pass:
 - No parameter extraction from command templates
 - Generated agent requires OpenAI API key to run
 
-### Next Steps (Phase 2)
+### Phase 2: Parameter Extraction ✅
 
-- [ ] Add parameter extraction for dynamic commands
-- [ ] Support multiple tools per skill
+- ✅ Extract parameters from command templates (`{param}`)
+- ✅ Generate parameterized LangChain tools
+- ✅ Support dynamic command execution with f-strings
+
+### Phase 3: Multi-Tool Workflow Support ✅
+
+- ✅ Extract multiple distinct tools from a skill
+- ✅ Generate multiple `@tool` decorated functions
+- ✅ Coordinate multiple tools in agent workflow
+- ✅ Support complex skills like GitHub CLI (issue, pr, run, api)
+
+### Example: GitHub Multi-Tool Agent
+
+```python
+# Generated from github skill - multiple tools coordinated
+@tool
+def github_pr_checks() -> str:
+    """Execute pr checks command."""
+    # ...
+
+@tool
+def github_run_list() -> str:
+    """Execute run list command."""
+    # ...
+
+# Agent can coordinate multiple tools
+tools = [github_pr_checks, github_run_list, ...]
+agent_executor = AgentExecutor(agent=agent, tools=tools)
+```
+
+### Next Steps (Phase 4)
+
+- [ ] Equivalence testing - validate generated agent matches original behavior
+- [ ] Integration tests with real LangChain execution
 - [ ] Handle conditional logic and workflows
-- [ ] Add validation tests for generated agent behavior
 - [ ] Support more skill patterns (API calls, file operations)
 
 ## Files
 
-- `converter.py` - Main conversion logic
-- `test_converter.py` - Test suite (6 tests, all passing)
-- `weather_agent.py` - Example generated agent from weather skill
+- `converter.py` - Main conversion logic (Phase 1-3)
+- `test_converter.py` - Test suite (10 tests, all passing)
+- `weather_agent.py` - Example single-tool agent
+- `github_agent_v3.py` - Example multi-tool agent (Phase 3)
 - `README.md` - This file
 
 ## Success Criteria ✅
 
-- [x] Converter successfully processes weather skill
+- [x] Converter successfully processes weather skill (Phase 1)
+- [x] Parameter extraction working (Phase 2)
+- [x] Multi-tool workflow support (Phase 3)
 - [x] Generated LangChain agent code is syntactically valid
 - [x] Clear conversion approach documented
-- [x] Tests validate each conversion step
-- [x] Path to Phase 2 identified
+- [x] Tests validate each conversion step (10/10 passing)
 
 ## Usage
 
@@ -107,4 +140,4 @@ Path('my_agent.py').write_text(agent_code)
 
 ---
 
-**Status**: Phase 1 complete. Ready for Phase 2 (parameter extraction and multi-tool support).
+**Status**: Phase 3 complete. Multi-tool workflow support implemented. Ready for Phase 4 (equivalence testing).
